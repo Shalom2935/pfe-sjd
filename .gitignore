@@ -1,0 +1,37 @@
+# MATLAB / Simulink generated files
+slprj/
+*.slxc
+*_acc.*
+*.mexw64
+*.obj
+*.lib
+*.exp
+*.exe
+*.dll
+*.dmr
+*.tmw
+*.rsp
+*.mk
+
+# MATLAB editor backups
+*.asv
+
+# Office temporary and lock files
+~$*
+.~lock*
+~WRL*.tmp
+*.tmp
+
+# Local logs and transient validation output
+*.log
+
+# Local backup files
+*.previous.*
+*.before_*
+*.original
+*.r2017a
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
