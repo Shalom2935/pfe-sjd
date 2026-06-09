@@ -29,11 +29,26 @@ electriques externes. La boucle aval est construite avec :
 - 51 transformateurs d'isolement saturables;
 - 51 charges secondaires resistives;
 - 15 placeholders de parafoudres;
-- 7 points de mesure courant exportes vers le workspace.
+- 7 points de mesure courant exportes vers le workspace;
+- 2 exports de tete RCC : `u_RCC(t)` et `i_RCC(t)`.
 
 Le primaire de chaque transformateur d'isolement est insere en serie dans la
 boucle par les ports `lconn:1` et `lconn:2`. La charge secondaire est fermee
 uniquement sur l'enroulement secondaire, entre `rconn:1` et `rconn:2`.
+
+## Exports de simulation
+
+Le modele exporte les signaux suivants au format `Timeseries` :
+
+- `u_RCC` : tension instantanee entre les ports externes `+` et `-` du
+  sous-systeme `Diam4100_CCR`.
+- `i_RCC` : courant instantane en tete de boucle, mesure par le capteur de
+  courant de sortie du DIAM4100.
+- `DIAM4100_Irms` : courant RMS utilise par la regulation interne du DIAM4100.
+- `FullLoop_I_MEAS_001`, `FullLoop_I_MEAS_010`, `FullLoop_I_MEAS_020`,
+  `FullLoop_I_MEAS_030`, `FullLoop_I_MEAS_040`, `FullLoop_I_MEAS_050` et
+  `FullLoop_I_MEAS_051` : courants instantanes aux points de mesure internes
+  de la boucle.
 
 ## Geometrie de boucle
 
