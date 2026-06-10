@@ -135,13 +135,32 @@ function scenarios = FaultSim_buildScenarioTable(varargin)
 end
 
 function cols = localColumns()
-    cols = {'scenario_id','class_id','class_name','fault_group','is_insulation_fault', ...
+    cols = {'scenario_id','class_id','class_name','fault_group','electrical_fault_family','is_insulation_fault', ...
             'fault_location_type','node_index','fault_distance_m','fault_regard_index', ...
             'fault_module_index','fault_R_ohm','fault_C_F','load_fault_mode','brightness_index'};
 end
 
 function row = localRow(id, classId, className, group, isIso, locType, nodeIdx, dist, regardIdx, moduleIdx, R, C, loadMode, brightnessIdx)
-    row = {id, classId, className, group, isIso, locType, nodeIdx, dist, regardIdx, moduleIdx, R, C, loadMode, brightnessIdx};
+    row = {id, classId, className, group, localElectricalFaultFamily(className), isIso, locType, nodeIdx, dist, regardIdx, moduleIdx, R, C, loadMode, brightnessIdx};
+end
+
+function family = localElectricalFaultFamily(className)
+    switch char(className)
+        case 'HEALTHY'
+            family = 'healthy';
+        case {'HUMIDITY_PROGRESSIVE', 'TI_INSULATION_LEAKAGE'}
+            family = 'high_R_resistive_leakage';
+        case 'REACTIVE_INCIPIENT'
+            family = 'capacitive_leakage';
+        case {'EARTH_SHORT', 'SURGE_ARRESTER_SHORT'}
+            family = 'low_R_earth_fault';
+        case 'OPEN_CIRCUIT'
+            family = 'series_open';
+        case 'TI_LOAD_FAULT'
+            family = 'secondary_load_fault';
+        otherwise
+            error('Unknown class_name for electrical family: %s', className);
+    end
 end
 
 function idx = localNearestNode(nodeDistances_m, distance_m)

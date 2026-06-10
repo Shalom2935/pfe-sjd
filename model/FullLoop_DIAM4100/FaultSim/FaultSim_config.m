@@ -22,7 +22,7 @@ function cfg = FaultSim_config(varargin)
     cfg.paths.faultSimDir = fileparts(thisFile);
     cfg.paths.fullLoopDir = fileparts(cfg.paths.faultSimDir);
     cfg.paths.outputDir = fullfile(cfg.paths.fullLoopDir, 'outputs', 'FaultSim');
-    cfg.paths.rawDir = fullfile(cfg.paths.outputDir, 'raw');
+    cfg.paths.rawDir = fullfile(cfg.paths.outputDir, 'raw', lower(cfg.mode));
     cfg.paths.featureDir = fullfile(cfg.paths.outputDir, 'features');
     cfg.paths.metadataDir = fullfile(cfg.paths.outputDir, 'metadata');
     cfg.paths.logDir = fullfile(cfg.paths.outputDir, 'logs');
@@ -36,10 +36,17 @@ function cfg = FaultSim_config(varargin)
     cfg.fs_Hz = 10000;
     cfg.Ts_s = 1 / cfg.fs_Hz;
 
-    % Keep this short for initial runs. Increase only after smoke validation.
-    cfg.simTime_s = 0.35;
-    cfg.featureWindow_s = 0.20;
+    % Simulation horizon.
+    % The DIAM4100 Ki sweep showed settling times up to about 0.9 s. We
+    % therefore simulate up to 1.10 s and keep only the final stable 0.10 s
+    % window, i.e. about 5 periods at 50 Hz.
+    cfg.simTime_s = 1.10;
+    cfg.rawSaveWindow_s = 0.10;
+    cfg.featureWindow_s = 0.10;
     cfg.gridFrequency_Hz = 50;
+
+    % Normal mode is used intentionally. Rapid Accelerator is disabled.
+    cfg.execution.simulationMode = 'normal';
 
     % Fault-location resolution.
     cfg.locationStep_m = 60;
@@ -107,6 +114,9 @@ function cfg = FaultSim_config(varargin)
         {'healthy'; 'insulation_fault'; 'insulation_fault'; ...
          'insulation_fault'; 'insulation_fault'; 'insulation_fault'; ...
          'continuity_fault'; 'non_insulation_load_fault'}, ...
+        {'healthy'; 'high_R_resistive_leakage'; 'capacitive_leakage'; ...
+         'low_R_earth_fault'; 'low_R_earth_fault'; 'high_R_resistive_leakage'; ...
+         'series_open'; 'secondary_load_fault'}, ...
         [false; true; true; true; true; true; false; false], ...
-        'VariableNames', {'class_id','class_name','fault_group','is_insulation_fault'});
+        'VariableNames', {'class_id','class_name','fault_group','electrical_fault_family','is_insulation_fault'});
 end

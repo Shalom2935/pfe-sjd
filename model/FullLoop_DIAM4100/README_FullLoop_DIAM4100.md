@@ -6,8 +6,6 @@ le DIAM4100.
 ## Fichiers principaux
 
 - `AGL_FullLoop_DIAM4100.slx` : modele Simulink de la boucle complete.
-- `AGL_FullLoop_DIAM4100.before_regard_topology_fix.slx` : sauvegarde du
-  modele avant la correction de topologie des regards equipes.
 - `FullLoop_simParams.m` : parametres centralises de la boucle complete.
 - `FullLoop_TI_database.m` : table finale des parametres TI OCEM.
 - `FullLoop_prepareDIAM4100.m` : initialise le DIAM4100 detaille avec la
@@ -115,6 +113,5 @@ depuis le sweep et ouvre `AGL_FullLoop_DIAM4100.slx`.
    la documentation constructeur.
 3. Lancer une simulation courte, puis verifier le conditionnement numerique
    avec les 51 transformateurs saturables.
-4. Avant la campagne FaultSim complete, comparer les horizons `0.35 s`,
-   `0.50 s` et `0.75 s` sur quelques scenarios representatifs afin de
-   justifier le temps de simulation retenu.
+4. Avant la campagne complete, valider un pre-run FaultSim avec l'horizon
+   retenu de `1.10 s` et la fenetre stable sauvegardee de `0.10 s`.

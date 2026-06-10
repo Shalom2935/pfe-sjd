@@ -4,14 +4,19 @@ function FaultSim_runBatch(varargin)
 % Usage:
 %   FaultSim_runBatch('Mode','smoke')
 %   FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true)
-%   FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true,'MaxScenarios',100)
+%   FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true,'StartAt',1,'EndAt',5000,'RunTag','PC01')
+%   FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true,'StartAt',5001,'EndAt',10000,'RunTag','PC02')
+%   FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true,'StartAt',10001,'EndAt','end','RunTag','PC03')
 
     parser = inputParser;
     parser.addParameter('Mode', 'smoke', @(s)ischar(s) || isstring(s));
     parser.addParameter('AcceptUnvalidatedRanges', false, @(x)islogical(x) && isscalar(x));
     parser.addParameter('RebuildModel', false, @(x)islogical(x) && isscalar(x));
     parser.addParameter('StartAt', 1, @(x)isnumeric(x) && isscalar(x) && x >= 1);
-    parser.addParameter('MaxScenarios', inf, @(x)isnumeric(x) && isscalar(x));
+    parser.addParameter('EndAt', inf, @(x)(isnumeric(x) && isscalar(x)) || ischar(x) || isstring(x));
+    parser.addParameter('MaxScenarios', inf, @(x)isnumeric(x) && isscalar(x) && x >= 0);
+    parser.addParameter('RunTag', '', @(s)ischar(s) || isstring(s));
+    parser.addParameter('OverwriteExisting', false, @(x)islogical(x) && isscalar(x));
     parser.parse(varargin{:});
 
     mode = lower(char(parser.Results.Mode));
@@ -38,41 +43,56 @@ function FaultSim_runBatch(varargin)
         scenarios = scenarios(1:cfg.smoke.maxScenarios, :);
     end
 
-    if isfinite(parser.Results.MaxScenarios)
-        scenarios = scenarios(1:min(height(scenarios), parser.Results.MaxScenarios), :);
-    end
-
-    startAt = parser.Results.StartAt;
-    if startAt > height(scenarios)
-        error('StartAt=%d exceeds scenario count %d.', startAt, height(scenarios));
-    end
+    totalScenarios = height(scenarios);
+    [startAt, endAt, rangeTag] = localResolveRunRange( ...
+        totalScenarios, ...
+        parser.Results.StartAt, ...
+        parser.Results.EndAt, ...
+        parser.Results.MaxScenarios);
+    scenariosToRun = scenarios(startAt:endAt, :);
 
     geometryFile = fullfile(cfg.paths.metadataDir, 'FaultSim_geometry.mat');
     S = load(geometryFile, 'FullLoop', 'geo', 'FaultSim');
     FullLoop = S.FullLoop;
-    geo = S.geo;
     FaultSimBase = S.FaultSim;
 
     load_system(cfg.model.faultFile);
 
-    featureFile = fullfile(cfg.paths.featureDir, sprintf('FaultSim_features_%s.csv', mode));
-    logFile = fullfile(cfg.paths.logDir, sprintf('FaultSim_runlog_%s.csv', mode));
+    outTag = localBuildOutputTag(mode, rangeTag, parser.Results.RunTag);
+    featureFile = fullfile(cfg.paths.featureDir, sprintf('FaultSim_features_%s.csv', outTag));
+    logFile = fullfile(cfg.paths.logDir, sprintf('FaultSim_runlog_%s.csv', outTag));
+    rangeScenarioFile = fullfile(cfg.paths.metadataDir, sprintf('FaultSim_scenarios_%s.csv', outTag));
+    writetable(scenariosToRun, rangeScenarioFile);
+    overwriteExisting = parser.Results.OverwriteExisting;
+
+    if overwriteExisting
+        localDeleteIfExists(featureFile);
+        localDeleteIfExists(logFile);
+    end
 
     fprintf('\nFaultSim batch mode: %s\n', mode);
-    runCount = height(scenarios) - startAt + 1;
-    fprintf('Scenarios selected in table: %d\n', height(scenarios));
-    fprintf('Scenarios to run now: %d (rows %d:%d)\n', runCount, startAt, height(scenarios));
+    runCount = height(scenariosToRun);
+    fprintf('Scenario table total: %d\n', totalScenarios);
+    fprintf('Scenarios to run now: %d (rows %d:%d)\n', runCount, startAt, endAt);
+    fprintf('Range scenario file: %s\n', rangeScenarioFile);
     fprintf('Raw output: %s\n', cfg.paths.rawDir);
     fprintf('Features: %s\n', featureFile);
     fprintf('Log: %s\n\n', logFile);
+    if overwriteExisting
+        fprintf('OverwriteExisting: true (existing raw files for selected scenarios will be replaced)\n\n');
+    end
 
-    for rowIdx = startAt:height(scenarios)
-        sc = scenarios(rowIdx, :);
+    for rowIdx = 1:height(scenariosToRun)
+        sc = scenariosToRun(rowIdx, :);
         rawFile = fullfile(cfg.paths.rawDir, sprintf('scenario_%06d.mat', sc.scenario_id));
 
         if exist(rawFile, 'file')
-            fprintf('[SKIP] scenario %06d already exists.\n', sc.scenario_id);
-            continue;
+            if overwriteExisting
+                delete(rawFile);
+            else
+                fprintf('[SKIP] scenario %06d already exists.\n', sc.scenario_id);
+                continue;
+            end
         end
 
         tStart = tic;
@@ -96,7 +116,8 @@ function FaultSim_runBatch(varargin)
             simIn = simIn.setVariable('FaultSim', FS);
             simIn = simIn.setModelParameter('StopTime', 'FaultSim.simTime_s', ...
                                             'MaxStep', 'FaultSim.Ts_s', ...
-                                            'ReturnWorkspaceOutputs', 'on');
+                                            'ReturnWorkspaceOutputs', 'on', ...
+                                            'SimulationMode', cfg.execution.simulationMode);
             simIn = localApplyLoadBlockParameters(simIn, cfg, FullLoop, sc);
 
             simOut = sim(simIn);
@@ -108,6 +129,10 @@ function FaultSim_runBatch(varargin)
             metadata.model_file = cfg.model.faultFile;
             metadata.fs_Hz = cfg.fs_Hz;
             metadata.simTime_s = cfg.simTime_s;
+            metadata.rawSaveWindow_s = cfg.rawSaveWindow_s;
+            metadata.featureWindow_s = cfg.featureWindow_s;
+            metadata.savedWindowStart_s = raw.time_s(1);
+            metadata.savedWindowEnd_s = raw.time_s(end);
 
             save(rawFile, 'raw', 'features', 'metadata', '-v7.3');
             localAppendTable(struct2table(features), featureFile);
@@ -137,6 +162,73 @@ function localEnsureDirs(cfg)
     end
 end
 
+function localDeleteIfExists(filePath)
+    if exist(filePath, 'file')
+        delete(filePath);
+    end
+end
+
+function [startAt, endAt, rangeTag] = localResolveRunRange(totalScenarios, startAtArg, endAtArg, maxScenarios)
+    startAt = floor(double(startAtArg));
+
+    if startAt < 1
+        error('StartAt must be >= 1.');
+    end
+    if startAt > totalScenarios
+        error('StartAt=%d exceeds scenario count %d.', startAt, totalScenarios);
+    end
+
+    endAt = localParseEndAt(endAtArg, totalScenarios);
+
+    if isfinite(maxScenarios)
+        endAt = min(endAt, startAt + floor(double(maxScenarios)) - 1);
+    end
+
+    if endAt > totalScenarios
+        warning('EndAt=%d exceeds scenario count %d. Clamping to end.', endAt, totalScenarios);
+        endAt = totalScenarios;
+    end
+
+    if endAt < startAt
+        error('Invalid run range: StartAt=%d, EndAt=%d.', startAt, endAt);
+    end
+
+    rangeTag = sprintf('%06d_%06d', startAt, endAt);
+end
+
+function endAt = localParseEndAt(endAtArg, totalScenarios)
+    if ischar(endAtArg) || isstring(endAtArg)
+        token = lower(strtrim(char(endAtArg)));
+        if strcmp(token, 'end') || strcmp(token, 'inf') || strcmp(token, 'infinity')
+            endAt = totalScenarios;
+            return;
+        end
+
+        value = str2double(token);
+        if isnan(value)
+            error('EndAt must be numeric or ''end''. Got: %s', token);
+        end
+        endAt = floor(value);
+        return;
+    end
+
+    if isinf(endAtArg)
+        endAt = totalScenarios;
+    else
+        endAt = floor(double(endAtArg));
+    end
+end
+
+function outTag = localBuildOutputTag(mode, rangeTag, runTag)
+    outTag = sprintf('%s_%s', lower(char(mode)), rangeTag);
+
+    runTag = strtrim(char(runTag));
+    if ~isempty(runTag)
+        runTag = regexprep(runTag, '[^A-Za-z0-9_-]', '_');
+        outTag = sprintf('%s_%s', outTag, runTag);
+    end
+end
+
 function FS = localApplyScenarioToFaultState(baseFS, cfg, sc)
     FS = baseFS;
     FS.shuntR_ohm(:) = cfg.inactiveShuntR_ohm;
@@ -144,6 +236,7 @@ function FS = localApplyScenarioToFaultState(baseFS, cfg, sc)
     FS.seriesR_ohm(:) = cfg.normalSeriesR_ohm;
     FS.activeClassId = sc.class_id;
     FS.activeClassName = sc.class_name{1};
+    FS.activeElectricalFaultFamily = sc.electrical_fault_family{1};
     FS.activeNodeIndex = sc.node_index;
     FS.activeDistance_m = sc.fault_distance_m;
 
@@ -203,16 +296,44 @@ function raw = localCollectAndResampleSignals(simOut, cfg)
         end
     end
 
-    raw = struct();
     [tU, u] = localTimeseriesToVector(simOut.get('u_RCC'));
     [tI, i] = localTimeseriesToVector(simOut.get('i_RCC'));
 
-    t0 = max([min(tU), min(tI), 0]);
-    t1 = min([max(tU), max(tI), cfg.simTime_s]);
-    t = (t0:cfg.Ts_s:t1).';
+    tAvailable0 = max([min(tU), min(tI), 0]);
+    tAvailable1 = min([max(tU), max(tI), cfg.simTime_s]);
+
+    if tAvailable1 <= tAvailable0
+        error('Invalid simulation time interval: [%.6f, %.6f].', tAvailable0, tAvailable1);
+    end
+
+    if isfield(cfg, 'rawSaveWindow_s') && isfinite(cfg.rawSaveWindow_s) && cfg.rawSaveWindow_s > 0
+        if cfg.rawSaveWindow_s + eps < cfg.featureWindow_s
+            error('rawSaveWindow_s must be >= featureWindow_s.');
+        end
+        t0 = max(tAvailable0, tAvailable1 - cfg.rawSaveWindow_s);
+    else
+        t0 = tAvailable0;
+    end
+
+    t1 = tAvailable1;
+
+    % Use exactly N samples at fs. This avoids the 1001-sample issue when
+    % using t0:Ts:t1 on a 0.10 s window. With fs=10 kHz and 0.10 s, this
+    % gives exactly 1000 samples, coherent with 5 cycles at 50 Hz.
+    nSamples = floor((t1 - t0) / cfg.Ts_s);
+    if nSamples < 8
+        error('Selected raw window is too short: %.6f s.', t1 - t0);
+    end
+
+    t = t0 + (0:nSamples-1).' * cfg.Ts_s;
+
+    raw = struct();
     raw.time_s = t;
     raw.u_RCC_V = interp1(tU, u, t, 'linear', 'extrap');
     raw.i_RCC_A = interp1(tI, i, t, 'linear', 'extrap');
+    raw.savedWindowStart_s = t(1);
+    raw.savedWindowEnd_s = t(end);
+    raw.savedWindowDuration_s = nSamples * cfg.Ts_s;
 
     for k = 1:numel(names)
         name = names{k};
@@ -250,7 +371,7 @@ function [t, y] = localTimeseriesToVector(x)
     error('Unsupported signal format: %s', class(x));
 end
 
-function features = localExtractFeatures(raw, cfg, sc, FS, DIAM4100)
+function features = localExtractFeatures(raw, cfg, sc, ~, DIAM4100)
     t = raw.time_s;
     u = raw.u_RCC_V;
     i = raw.i_RCC_A;
@@ -265,6 +386,7 @@ function features = localExtractFeatures(raw, cfg, sc, FS, DIAM4100)
     features.class_id = sc.class_id;
     features.class_name = string(sc.class_name{1});
     features.fault_group = string(sc.fault_group{1});
+    features.electrical_fault_family = string(sc.electrical_fault_family{1});
     features.fault_location_type = string(sc.fault_location_type{1});
     features.fault_distance_m = sc.fault_distance_m;
     features.node_index = sc.node_index;
@@ -381,9 +503,10 @@ function localAppendTable(T, filePath)
 end
 
 function localAppendLog(logFile, sc, status, message, elapsed_s)
-    row = table(sc.scenario_id, string(sc.class_name{1}), string(sc.fault_location_type{1}), ...
-        sc.fault_distance_m, sc.brightness_index, string(status), string(message), elapsed_s, ...
-        'VariableNames', {'scenario_id','class_name','fault_location_type','fault_distance_m', ...
-                          'brightness_index','status','message','elapsed_s'});
+    row = table(sc.scenario_id, string(sc.class_name{1}), string(sc.electrical_fault_family{1}), ...
+        string(sc.fault_location_type{1}), sc.fault_distance_m, sc.brightness_index, ...
+        string(status), string(message), elapsed_s, ...
+        'VariableNames', {'scenario_id','class_name','electrical_fault_family','fault_location_type', ...
+                          'fault_distance_m','brightness_index','status','message','elapsed_s'});
     localAppendTable(row, logFile);
 end

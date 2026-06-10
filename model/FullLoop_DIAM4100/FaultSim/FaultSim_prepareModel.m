@@ -59,7 +59,8 @@ function [cfg, FullLoop, geo] = FaultSim_prepareModel(varargin)
     set_param(cfg.model.faultName, ...
         'StopTime', 'FaultSim.simTime_s', ...
         'MaxStep', 'FaultSim.Ts_s', ...
-        'ReturnWorkspaceOutputs', 'on');
+        'ReturnWorkspaceOutputs', 'on', ...
+        'SimulationMode', cfg.execution.simulationMode);
 
     save_system(cfg.model.faultName, cfg.model.faultFile);
 
@@ -144,6 +145,7 @@ function FaultSim = localDefaultFaultState(cfg, geo)
     FaultSim.fs_Hz = cfg.fs_Hz;
     FaultSim.Ts_s = cfg.Ts_s;
     FaultSim.simTime_s = cfg.simTime_s;
+    FaultSim.rawSaveWindow_s = cfg.rawSaveWindow_s;
     FaultSim.featureWindow_s = cfg.featureWindow_s;
     FaultSim.nodeDistance_m = geo.nodeDistances_m;
     FaultSim.nodeCount = geo.nodeCount;
@@ -267,7 +269,9 @@ function localPatchFaultTopology(cfg, FullLoop, geo)
     localDeleteBlocksByName(mdl, '^Cable_\d{3}$');
 
     % Keep simulation outputs as To Workspace variables.
-    set_param(mdl, 'ReturnWorkspaceOutputs', 'on');
+    set_param(mdl, ...
+        'ReturnWorkspaceOutputs', 'on', ...
+        'SimulationMode', cfg.execution.simulationMode);
 end
 
 function localDeleteRootLines(mdl)
