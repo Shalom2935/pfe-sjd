@@ -53,9 +53,9 @@ range-specific scenario tables are tagged by mode and by scenario range, for
 example:
 
 ```text
-../outputs/FaultSim/features/FaultSim_features_full_000001_005000_PC01.csv
-../outputs/FaultSim/logs/FaultSim_runlog_full_000001_005000_PC01.csv
-../outputs/FaultSim/metadata/FaultSim_scenarios_full_000001_005000_PC01.csv
+../outputs/FaultSim/features/FaultSim_features_full_000001_005000_plage_1.csv
+../outputs/FaultSim/logs/FaultSim_runlog_full_000001_005000_plage_1.csv
+../outputs/FaultSim/metadata/FaultSim_scenarios_full_000001_005000_plage_1.csv
 ```
 
 ## Electrical labels
@@ -99,20 +99,14 @@ horizon leaves the DIAM4100 current controller enough time to settle before
 the raw traces and features are extracted. Only the final stable raw window is
 saved to limit disk usage during the full campaign.
 
-## Multi-PC ranges
+## Scenario ranges
 
-Use `StartAt`, `EndAt` and `RunTag` to split the full table across several
-machines:
+Use `StartAt`, `EndAt` and `RunTag` to run an identified subset of the full
+scenario table:
 
 ```matlab
 FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true, ...
-    'RebuildModel',false,'StartAt',1,'EndAt',5000,'RunTag','PC01')
-
-FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true, ...
-    'RebuildModel',false,'StartAt',5001,'EndAt',10000,'RunTag','PC02')
-
-FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true, ...
-    'RebuildModel',false,'StartAt',10001,'EndAt','end','RunTag','PC03')
+    'RebuildModel',false,'StartAt',1,'EndAt',5000,'RunTag','plage_1')
 ```
 
 `MaxScenarios` remains available and is now applied after `StartAt`, so

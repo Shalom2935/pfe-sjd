@@ -162,59 +162,18 @@ FaultSim_runBatch( ...
     'RunTag', 'prerun')
 ```
 
-Decoupage multi-PC recommande :
+La campagne peut etre executee par plages avec `StartAt`, `EndAt` et
+`RunTag`. Ces parametres servent seulement a identifier et isoler une plage de
+scenarios dans les fichiers produits :
 
 ```matlab
-% PC 1
 FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true, ...
-    'RebuildModel',false,'StartAt',1,'EndAt',3306,'RunTag','B0_PC01')
-
-% PC 2
-FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true, ...
-    'RebuildModel',false,'StartAt',3307,'EndAt',6612,'RunTag','B1_PC02')
-
-% PC 3
-FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true, ...
-    'RebuildModel',false,'StartAt',6613,'EndAt',9918,'RunTag','B2_PC03')
-
-% PC 4
-FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true, ...
-    'RebuildModel',false,'StartAt',9919,'EndAt',13224,'RunTag','B3_PC04')
-
-% PC 5
-FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true, ...
-    'RebuildModel',false,'StartAt',13225,'EndAt',16530,'RunTag','B4_PC05')
-
-% PC 6
-FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true, ...
-    'RebuildModel',false,'StartAt',16531,'EndAt','end','RunTag','B5_PC06')
+    'RebuildModel',false,'StartAt',1,'EndAt',5000,'RunTag','plage_1')
 ```
 
 `MaxScenarios` reste disponible et s'applique apres `StartAt` :
 
 ```matlab
 FaultSim_runBatch('Mode','full','AcceptUnvalidatedRanges',true, ...
-    'StartAt',5001,'MaxScenarios',5000,'RunTag','PC02')
+    'StartAt',5001,'MaxScenarios',5000,'RunTag','plage_2')
 ```
-
-## Sorties et versionnement
-
-Sont versionnes :
-
-- le modele source `AGL_FullLoop_DIAM4100.slx`;
-- les scripts de parametrage et de reproduction;
-- les CSV de topologie;
-- le resume smoke compact;
-- les documents de conception et references utiles.
-
-Ne sont pas versionnes :
-
-- `AGL_FullLoop_DIAM4100_faultsim.slx`;
-- `*.slxc`, `slprj/`, `*_ert_rtw/`, `*_grt_rtw/`, `*_acc.*`;
-- `outputs/FaultSim/raw/`;
-- `outputs/FaultSim/features/`;
-- `outputs/FaultSim/logs/`;
-- les fichiers de geometrie/scenarios generes par FaultSim.
-
-Cette separation garde le depot centre sur le travail de conception et rend
-les resultats reproductibles depuis une installation propre.
