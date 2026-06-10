@@ -24,6 +24,17 @@ slprj/
 
 # Local logs and transient validation output
 *.log
+model/FullLoop_DIAM4100/AGL_FullLoop_DIAM4100_faultsim.slx
+model/FullLoop_DIAM4100/outputs/FaultSim/raw/
+model/FullLoop_DIAM4100/outputs/FaultSim/features/
+model/FullLoop_DIAM4100/outputs/FaultSim/logs/
+model/FullLoop_DIAM4100/outputs/FaultSim/metadata/*.mat
+model/FullLoop_DIAM4100/outputs/FaultSim/metadata/FaultSim_nodes.csv
+model/FullLoop_DIAM4100/outputs/FaultSim/metadata/FaultSim_segments.csv
+model/FullLoop_DIAM4100/outputs/FaultSim/metadata/FaultSim_load_nodes.csv
+model/FullLoop_DIAM4100/outputs/FaultSim/metadata/FaultSim_surge_nodes.csv
+model/FullLoop_DIAM4100/outputs/FaultSim/metadata/FaultSim_scenarios_*.csv
+!model/FullLoop_DIAM4100/outputs/FaultSim/metadata/FaultSim_smoke_summary.csv
 
 # Local backup files
 *.previous.*

@@ -16,9 +16,13 @@ le DIAM4100.
   `model/DIAM4100/figures/DIAM4100_Ki_best_schedule.csv`.
 - `FullLoop_patchTopologyOpenXML.py` : corrige le `.slx` courant sans ecraser
   le sous-systeme DIAM4100 modifie manuellement.
+- `FaultSim/` : scripts locaux de preparation, generation de scenarios et
+  extraction de features pour la campagne de defauts.
 - `outputs/FullLoop_load_topology.csv` : placement des charges et TI.
 - `outputs/FullLoop_cable_segments.csv` : segmentation du cable.
 - `outputs/FullLoop_surge_topology.csv` : placement des parafoudres.
+- `outputs/FaultSim/metadata/FaultSim_smoke_summary.csv` : synthese compacte
+  des 8 scenarios smoke valides avant campagne.
 
 ## Architecture retenue
 
@@ -111,3 +115,6 @@ depuis le sweep et ouvre `AGL_FullLoop_DIAM4100.slx`.
    la documentation constructeur.
 3. Lancer une simulation courte, puis verifier le conditionnement numerique
    avec les 51 transformateurs saturables.
+4. Avant la campagne FaultSim complete, comparer les horizons `0.35 s`,
+   `0.50 s` et `0.75 s` sur quelques scenarios representatifs afin de
+   justifier le temps de simulation retenu.
