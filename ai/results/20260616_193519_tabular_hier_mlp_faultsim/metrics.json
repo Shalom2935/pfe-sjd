@@ -1,0 +1,43 @@
+{
+  "best_epoch": 28,
+  "best_val_loss": 0.33833009255937785,
+  "train": {
+    "loss_total": 0.33474852454770165,
+    "loss_family": 0.3261526826569498,
+    "loss_distance": 0.0286528097482485,
+    "family_accuracy": 0.7696590118302018,
+    "family_balanced_accuracy": 0.7813298566746292,
+    "family_macro_f1": 0.7776124423514416,
+    "distance_mae_m": 432.73766567413395,
+    "distance_median_ae_m": 349.18377685546875,
+    "distance_p90_ae_m": 920.0895507812501,
+    "within_60m": 0.09046624913013222,
+    "within_120m": 0.1697981906750174
+  },
+  "val": {
+    "loss_total": 0.33833009255937785,
+    "loss_family": 0.3294990658760071,
+    "loss_distance": 0.029436752738722836,
+    "family_accuracy": 0.7620481927710844,
+    "family_balanced_accuracy": 0.7747965904688106,
+    "family_macro_f1": 0.7709465915455833,
+    "distance_mae_m": 441.6785074256989,
+    "distance_median_ae_m": 344.8478088378906,
+    "distance_p90_ae_m": 946.6413818359375,
+    "within_60m": 0.08433734939759036,
+    "within_120m": 0.17771084337349397
+  },
+  "test_holdout": {
+    "loss_total": 0.3440455486220108,
+    "loss_family": 0.33530026203353575,
+    "loss_distance": 0.02915094632646973,
+    "family_accuracy": 0.7516930022573364,
+    "family_balanced_accuracy": 0.7645748100526009,
+    "family_macro_f1": 0.7628611438679245,
+    "distance_mae_m": 437.83319146907627,
+    "distance_median_ae_m": 354.7098388671875,
+    "distance_p90_ae_m": 918.2195312500002,
+    "within_60m": 0.07900677200902935,
+    "within_120m": 0.18961625282167044
+  }
+}
