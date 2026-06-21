@@ -1,0 +1,17 @@
+{
+  "model_name": "TabularHierMLP",
+  "input_features": 73,
+  "num_classes": 4,
+  "num_parameters": 45586,
+  "tasks": [
+    "fault_classification",
+    "fault_distance_regression"
+  ],
+  "validated_classes": [
+    "HUMIDITY_PROGRESSIVE",
+    "REACTIVE_INCIPIENT",
+    "EARTH_SHORT",
+    "OPEN_CIRCUIT"
+  ],
+  "interpretation": "Proof-of-feasibility model. Classification is reliable for frank earth faults and open circuits. Localization must be interpreted as probable zone estimation."
+}
